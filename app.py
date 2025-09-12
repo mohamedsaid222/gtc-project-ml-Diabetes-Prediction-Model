@@ -1,21 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
+import joblib
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # ======================
-# 1. Load trained models
+# 1. Load trained models (using joblib)
 # ======================
-with open("final_logreg_model.pkl", "rb") as f:
-    logreg_model = pickle.load(f)
-
-with open("final_rf_model.pkl", "rb") as f:
-    rf_model = pickle.load(f)
-
-with open("final_xgb_model.pkl", "rb") as f:
-    xgb_model = pickle.load(f)
+logreg_model = joblib.load("final_logreg_model.pkl")
+rf_model = joblib.load("final_rf_model.pkl")
+xgb_model = joblib.load("final_xgb_model.pkl")
 
 models = {
     "Logistic Regression": logreg_model,
@@ -36,7 +31,7 @@ st.title("🩺 Diabetes Prediction App")
 st.write("Enter patient details to predict the likelihood of diabetes and explore feature importance.")
 
 # ======================
-# 3. User inputs
+# 3. User inputs (Sidebar)
 # ======================
 with st.sidebar:
     st.header("Patient Data Input")
