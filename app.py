@@ -1,3 +1,6 @@
+# ================================
+# Diabetes Prediction App (Fixed)
+# ================================
 import streamlit as st
 import joblib
 import numpy as np
@@ -47,8 +50,7 @@ tab1, tab2 = st.tabs(["🔍 Prediction", "📊 Model Insights"])
 # Tab 1: Prediction
 # -------------------------------
 with tab1:
-    st.markdown("Predict the likelihood of diabetes using **Machine Learning models**. "
-                "Select a model, enter patient data, and get instant predictions.")
+    st.markdown("Predict the likelihood of diabetes using **Machine Learning models**.")
 
     st.sidebar.header("⚙️ Settings")
     model_choice = st.sidebar.selectbox("Select Model", list(models.keys()))
@@ -122,37 +124,35 @@ with tab1:
 # Tab 2: Model Insights
 # -------------------------------
 with tab2:
-    st.markdown("Explore model insights such as **Feature Importance** and **ROC Curves**.")
+    st.markdown("Explore model insights such as **Feature Importance**.")
 
-    # Feature Importance (Random Forest & XGBoost only)
-    st.subheader("🔎 Feature Importance")
     features = ["Pregnancies","Glucose","BloodPressure","SkinThickness",
                 "Insulin","BMI","DPF","Age"]
 
     rf_model = models["Random Forest"]
     xgb_model = models["XGBoost"]
 
-    fig, axes = plt.subplots(1,2, figsize=(12,5))
-    sns.barplot(x=rf_model.feature_importances_, y=features, ax=axes[0], palette="viridis")
+    # Feature Importance plots (safe version)
+    st.subheader("🔎 Feature Importance")
+    fig, axes = plt.subplots(1,2, figsize=(14,6))
+
+    rf_importance = rf_model.feature_importances_
+    df_rf = pd.DataFrame({
+        "Feature": features[:len(rf_importance)],
+        "Importance": rf_importance
+    }).sort_values("Importance", ascending=False)
+    sns.barplot(x="Importance", y="Feature", data=df_rf, ax=axes[0], palette="viridis")
     axes[0].set_title("Random Forest Feature Importance")
-    sns.barplot(x=xgb_model.feature_importances_, y=features, ax=axes[1], palette="plasma")
+
+    xgb_importance = xgb_model.feature_importances_
+    df_xgb = pd.DataFrame({
+        "Feature": features[:len(xgb_importance)],
+        "Importance": xgb_importance
+    }).sort_values("Importance", ascending=False)
+    sns.barplot(x="Importance", y="Feature", data=df_xgb, ax=axes[1], palette="plasma")
     axes[1].set_title("XGBoost Feature Importance")
+
     st.pyplot(fig)
 
-    # ROC Curves
-    st.subheader("📈 ROC Curve Comparison")
-    try:
-        for name, model in models.items():
-            if hasattr(model, "predict_proba"):
-                y_proba = model.predict_proba(X_test)[:,1]
-                fpr, tpr, _ = roc_curve(y_test, y_proba)
-                roc_auc = auc(fpr, tpr)
-                plt.plot(fpr, tpr, label=f"{name} (AUC={roc_auc:.2f})")
-        plt.plot([0,1],[0,1],'--', color="gray")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.title("ROC Curve Comparison")
-        plt.legend()
-        st.pyplot(plt.gcf())
-    except Exception as e:
-        st.warning("⚠️ ROC curves require `X_test` and `y_test`. Please load your dataset.")
+    st.info("ℹ️ ROC curves are disabled here because `X_test` and `y_test` are not available in this app.")
+
