@@ -1,13 +1,13 @@
-# ================================
-# Diabetes Prediction App (Fixed)
-# ================================
+# ====================================
+# Diabetes Prediction App - Streamlit
+# ====================================
+
 import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import roc_curve, auc
 
 # -------------------------------
 # Load saved models
@@ -22,19 +22,19 @@ models = {
 # Gauge function
 # -------------------------------
 def plot_gauge(probability, prediction):
-    fig, ax = plt.subplots(figsize=(4,2.2), subplot_kw={'projection': 'polar'})
+    fig, ax = plt.subplots(figsize=(4, 2.2), subplot_kw={'projection': 'polar'})
     angle = probability * np.pi
     theta = np.linspace(0, np.pi, 200)
     r = np.ones_like(theta)
     ax.plot(theta, r, color="black", linewidth=3)
     ax.fill_between(theta, 0, 1, color="lightgray", alpha=0.3)
     ax.plot([angle, angle], [0, 1],
-            color="red" if prediction==1 else "green", linewidth=4)
-    ax.set_ylim(0,1)
+            color="red" if prediction == 1 else "green", linewidth=4)
+    ax.set_ylim(0, 1)
     ax.set_yticks([])
     ax.set_xticks([])
     ax.set_axis_off()
-    label = "Diabetic" if prediction==1 else "Not Diabetic"
+    label = "Diabetic" if prediction == 1 else "Not Diabetic"
     ax.set_title(f"Prob = {probability:.2f}\n{label}", fontsize=11, weight="bold")
     return fig
 
@@ -50,7 +50,8 @@ tab1, tab2 = st.tabs(["🔍 Prediction", "📊 Model Insights"])
 # Tab 1: Prediction
 # -------------------------------
 with tab1:
-    st.markdown("Predict the likelihood of diabetes using **Machine Learning models**.")
+    st.markdown("Predict the likelihood of diabetes using **Machine Learning models**. "
+                "Select a model, enter patient data, and get instant predictions.")
 
     st.sidebar.header("⚙️ Settings")
     model_choice = st.sidebar.selectbox("Select Model", list(models.keys()))
@@ -76,7 +77,17 @@ with tab1:
         age = st.number_input("Age", 1, 120, 30)
 
     if st.button("🔍 Predict Diabetes"):
-        input_data = np.array([[pregnancies, glucose, bp, skin, insulin, bmi, dpf, age]])
+        input_data = pd.DataFrame([{
+            "Pregnancies": pregnancies,
+            "Glucose": glucose,
+            "BloodPressure": bp,
+            "SkinThickness": skin,
+            "Insulin": insulin,
+            "BMI": bmi,
+            "DPF": dpf,
+            "Age": age
+        }])
+
         model = models[model_choice]
         prediction = model.predict(input_data)[0]
         proba = model.predict_proba(input_data)[0][1]
@@ -132,27 +143,22 @@ with tab2:
     rf_model = models["Random Forest"]
     xgb_model = models["XGBoost"]
 
-    # Feature Importance plots (safe version)
+    # Feature Importance plots (fixed with zip)
     st.subheader("🔎 Feature Importance")
     fig, axes = plt.subplots(1,2, figsize=(14,6))
 
     rf_importance = rf_model.feature_importances_
-    df_rf = pd.DataFrame({
-        "Feature": features[:len(rf_importance)],
-        "Importance": rf_importance
-    }).sort_values("Importance", ascending=False)
+    df_rf = pd.DataFrame(list(zip(features, rf_importance)),
+                         columns=["Feature", "Importance"]).sort_values("Importance", ascending=False)
     sns.barplot(x="Importance", y="Feature", data=df_rf, ax=axes[0], palette="viridis")
     axes[0].set_title("Random Forest Feature Importance")
 
     xgb_importance = xgb_model.feature_importances_
-    df_xgb = pd.DataFrame({
-        "Feature": features[:len(xgb_importance)],
-        "Importance": xgb_importance
-    }).sort_values("Importance", ascending=False)
+    df_xgb = pd.DataFrame(list(zip(features, xgb_importance)),
+                          columns=["Feature", "Importance"]).sort_values("Importance", ascending=False)
     sns.barplot(x="Importance", y="Feature", data=df_xgb, ax=axes[1], palette="plasma")
     axes[1].set_title("XGBoost Feature Importance")
 
     st.pyplot(fig)
 
-    st.info("ℹ️ ROC curves are disabled here because `X_test` and `y_test` are not available in this app.")
 
