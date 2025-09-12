@@ -27,13 +27,13 @@ features = [
 # ======================
 # 2. App title
 # ======================
-st.title("🩺 Diabetes Prediction App")
+st.title("🧑‍⚕️ Diabetes Prediction App")
 st.write("Enter patient details to predict the likelihood of diabetes and explore feature importance and EDA visualizations.")
 
 # ======================
 # 3. User inputs (Center, not Sidebar)
 # ======================
-st.subheader("📌 Enter Patient Data")
+st.subheader("🩸 Patient Data Entry")
 
 col1, col2, col3 = st.columns(3)
 
@@ -60,22 +60,36 @@ input_data = pd.DataFrame([[
 # ======================
 # 4. Model selection
 # ======================
-st.subheader("⚙️ Choose Model")
-model_choice = st.selectbox("Model", list(models.keys()))
+st.subheader("🧬 Choose Prediction Model")
+model_choice = st.selectbox(
+    "Model",
+    list(models.keys()),
+    index=list(models.keys()).index("Random Forest")  # Default = Random Forest
+)
 model = models[model_choice]
 
 # ======================
 # 5. Prediction + Feature Importance
 # ======================
-if st.button("🔮 Predict"):
+if st.button("🧾 Predict"):
     prediction = model.predict(input_data)[0]
+    proba = None
+    if hasattr(model, "predict_proba"):
+        proba = model.predict_proba(input_data)[0][1]
+
     if prediction == 1:
-        st.error("⚠️ The model predicts this patient is likely to have Diabetes.")
+        if proba is not None:
+            st.error(f"⚠️ Patient is likely to have Diabetes (Probability: {proba:.2%})")
+        else:
+            st.error("⚠️ Patient is likely to have Diabetes.")
     else:
-        st.success("✅ The model predicts this patient is NOT likely to have Diabetes.")
+        if proba is not None:
+            st.success(f"✅ Patient is NOT likely to have Diabetes (Probability: {proba:.2%})")
+        else:
+            st.success("✅ Patient is NOT likely to have Diabetes.")
 
     # Show Feature Importance only after prediction
-    st.subheader("🔎 Feature Importance Analysis")
+    st.subheader("📊 Feature Importance Analysis")
 
     if model_choice == "Random Forest":
         rf_importance = model.named_steps["clf"].feature_importances_
@@ -102,24 +116,24 @@ if st.button("🔮 Predict"):
         st.pyplot(fig)
 
     else:
-        st.info("Feature importance is not available for Logistic Regression.")
+        st.info("ℹ️ Feature importance is not available for Logistic Regression.")
 
     # ======================
     # 6. Extra EDA Visualizations
     # ======================
-    st.subheader("📊 Exploratory Data Analysis (EDA)")
+    st.subheader("📉 Exploratory Data Analysis (EDA)")
 
     # Load dataset (for visualization only)
     df = pd.read_csv("diabetes.csv")
 
     # Correlation Heatmap
-    st.write("### Correlation Heatmap")
+    st.write("### 🔗 Correlation Heatmap")
     fig, ax = plt.subplots(figsize=(8, 6))
     sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
     # Distribution of Features
-    st.write("### Feature Distributions")
+    st.write("### 📈 Feature Distributions")
     selected_feature = st.selectbox("Choose a feature to visualize:", features)
     fig, ax = plt.subplots(figsize=(6, 4))
     sns.histplot(df[selected_feature], kde=True, bins=30, ax=ax)
